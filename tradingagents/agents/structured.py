@@ -19,7 +19,9 @@ all three agents log the same warnings when fallback fires.
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any, TypeVar
 
 from pydantic import BaseModel
@@ -27,6 +29,28 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
+
+_strict_structured_outputs: ContextVar[bool] = ContextVar(
+    "strict_structured_outputs", default=False
+)
+
+
+class StructuredOutputError(RuntimeError):
+    """A required structured response could not be bound or validated."""
+
+
+@contextmanager
+def strict_structured_outputs() -> Iterator[None]:
+    """Require typed output without free-text fallback within this context.
+
+    Wrap both agent construction and execution. The setting is local to the
+    current context and is restored even when a run fails.
+    """
+    token = _strict_structured_outputs.set(True)
+    try:
+        yield
+    finally:
+        _strict_structured_outputs.reset(token)
 
 # Schema-only structured output binds exactly one tool (the schema itself), so a
 # model that reaches for a search tool emits an unknown tool call and the whole
@@ -46,14 +70,25 @@ def bind_structured(llm: Any, schema: type[T], agent_name: str) -> Any | None:
     will use free-text generation for every call instead of one-shot fallback.
     """
     try:
-        return llm.with_structured_output(schema)
-    except (NotImplementedError, AttributeError) as exc:
+        structured_llm = llm.with_structured_output(schema)
+    except Exception as exc:
+        if _strict_structured_outputs.get():
+            raise StructuredOutputError(
+                f"{agent_name}: structured-output binding failed"
+            ) from exc
+        if not isinstance(exc, (NotImplementedError, AttributeError)):
+            raise
         logger.warning(
             "%s: provider does not support with_structured_output (%s); "
             "falling back to free-text generation",
             agent_name, exc,
         )
         return None
+    if structured_llm is None and _strict_structured_outputs.get():
+        raise StructuredOutputError(
+            f"{agent_name}: structured-output binding returned no runnable"
+        )
+    return structured_llm
 
 
 def invoke_structured(structured_llm: Any | None, prompt: Any, agent_name: str) -> T | None:
@@ -64,6 +99,10 @@ def invoke_structured(structured_llm: Any | None, prompt: Any, agent_name: str) 
     shape), so a caller can forward the same value to its free-text fallback.
     """
     if structured_llm is None:
+        if _strict_structured_outputs.get():
+            raise StructuredOutputError(
+                f"{agent_name}: structured output is unavailable"
+            )
         return None
     try:
         result = structured_llm.invoke(prompt)
@@ -72,8 +111,14 @@ def invoke_structured(structured_llm: Any | None, prompt: Any, agent_name: str) 
             # the tool, leaving the parser with nothing to return. Treat it
             # as a structured miss and fall back, with a clear reason.
             raise ValueError("structured output returned no parsed result")
+        if _strict_structured_outputs.get() and not isinstance(result, BaseModel):
+            raise TypeError("structured output did not return a validated model")
         return result
     except Exception as exc:
+        if _strict_structured_outputs.get():
+            raise StructuredOutputError(
+                f"{agent_name}: structured-output invocation failed"
+            ) from exc
         logger.warning(
             "%s: structured-output invocation failed (%s); retrying once as free text",
             agent_name, exc,

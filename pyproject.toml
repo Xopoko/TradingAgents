@@ -41,9 +41,14 @@ dev = [
 bedrock = [
     "langchain-aws>=1.7.9",
 ]
+# Bybit DEMO execution uses the stable adapter API; requires Python 3.12–3.14.
+bybit-demo = [
+    "nautilus_trader==1.231.0",
+]
 
 [project.scripts]
 tradingagents = "cli.main:app"
+tradingagents-bybit-demo = "tradingagents.integrations.bybit_demo.runner:main"
 
 [tool.setuptools.dynamic]
 version = {attr = "tradingagents.__version__"}

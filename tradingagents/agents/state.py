@@ -3,6 +3,8 @@ from typing import Annotated
 from langgraph.graph import MessagesState
 from typing_extensions import TypedDict
 
+from tradingagents.agents.schemas import PortfolioDecision
+
 
 # Researcher team state
 class InvestDebateState(TypedDict):
@@ -68,6 +70,7 @@ class AgentState(MessagesState):
     ]
     final_trade_decision: Annotated[str, "Final decision from the Portfolio Manager"]
     final_rating: Annotated[str, "The Portfolio Manager's 5-tier rating, or REVIEW when it has none"]
+    final_decision: Annotated[PortfolioDecision | None, "Validated Portfolio Manager output; None on free-text fallback"]
     past_context: Annotated[str, "Memory log context for the Portfolio Manager (same-ticker decisions + cross-ticker lessons), written by the Memory Log step"]
     memory_note: Annotated[str, "What the Memory Log step could not settle or read this run, for the report; empty when all went well"]
     portfolio_context: Annotated[str, "Caller-supplied holdings and cash, rendered at run start; empty when not provided"]

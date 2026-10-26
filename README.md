@@ -105,8 +105,8 @@ The selected analysts work at the same time, each on its own tools, and the rese
 </p>
 
 ### Risk Management and Portfolio Manager
-- Continuously evaluates portfolio risk by assessing market volatility, liquidity, and other risk factors. The risk management team evaluates and adjusts trading strategies, providing assessment reports to the Portfolio Manager for final decision.
-- The Portfolio Manager approves/rejects the transaction proposal. If approved, the order will be sent to the simulated exchange and executed.
+- Assesses portfolio risk using market volatility, liquidity, and other risk factors. The risk management team provides assessment reports to the Portfolio Manager for the final decision.
+- The Portfolio Manager produces a final recommendation and rating. The interactive CLI displays these results; the optional [Bybit DEMO integration](docs/bybit-demo.md) can execute bounded BTC spot orders using its separate portfolio and execution rules.
 
 <p align="center">
   <img src="assets/risk.png" width="70%" style="display: inline-block; margin: 0 2%;">
@@ -200,6 +200,8 @@ cp .env.example .env
 ```
 
 ### CLI Usage
+
+For bounded BTC spot demo execution, see the [Bybit DEMO monitor guide](docs/bybit-demo.md).
 
 Launch the interactive CLI:
 ```bash

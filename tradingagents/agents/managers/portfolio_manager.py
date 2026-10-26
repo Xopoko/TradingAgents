@@ -17,7 +17,12 @@ from tradingagents.agents.context import (
 )
 from tradingagents.agents.rating import parse_rating
 from tradingagents.agents.schemas import PortfolioDecision, render_pm_decision
-from tradingagents.agents.structured import NO_EXTERNAL_TOOLS, bind_structured, invoke_structured
+from tradingagents.agents.structured import (
+    NO_EXTERNAL_TOOLS,
+    StructuredOutputError,
+    bind_structured,
+    invoke_structured,
+)
 
 
 def create_portfolio_manager(llm):
@@ -79,6 +84,8 @@ Write these sections, in this order, starting with the rating on its own line:
         # Read back from text, a rating the thesis quotes could replace it.
         decision = invoke_structured(structured_llm, prompt, "Portfolio Manager")
         if decision is not None:
+            if not isinstance(decision, PortfolioDecision):
+                raise StructuredOutputError("Portfolio Manager: expected a PortfolioDecision")
             final_trade_decision = render_pm_decision(decision)
             final_rating = decision.rating.value
         else:
@@ -101,6 +108,7 @@ Write these sections, in this order, starting with the rating on its own line:
             "risk_debate_state": new_risk_debate_state,
             "final_trade_decision": final_trade_decision,
             "final_rating": final_rating,
+            "final_decision": decision,
         }
 
     return portfolio_manager_node
