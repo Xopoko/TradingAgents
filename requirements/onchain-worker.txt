@@ -1,0 +1,2 @@
+# Install into a dedicated Python 3.12/3.13 environment, never the Bybit worker.
+almanak @ git+https://github.com/almanak-co/sdk.git@39cfabb780d297f5f90e2f3ee68215dfb382b5f2

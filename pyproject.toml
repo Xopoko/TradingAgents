@@ -49,6 +49,7 @@ bybit-demo = [
 [project.scripts]
 tradingagents = "cli.main:app"
 tradingagents-bybit-demo = "tradingagents.integrations.bybit_demo.runner:main"
+tradingagents-onchain = "tradingagents.integrations.onchain.runner:main"
 
 [tool.setuptools.dynamic]
 version = {attr = "tradingagents.__version__"}

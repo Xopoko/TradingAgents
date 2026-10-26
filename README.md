@@ -202,6 +202,7 @@ cp .env.example .env
 ### CLI Usage
 
 For bounded BTC spot demo execution, see the [Bybit DEMO monitor guide](docs/bybit-demo.md).
+For WBTC/USDT DEX execution on an isolated Ethereum fork, see the [onchain fork guide](docs/onchain-fork.md).
 
 Launch the interactive CLI:
 ```bash
